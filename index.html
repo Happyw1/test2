@@ -1,69 +1,53 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>Gorilla Tag WebXR Demo</title>
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-physics-system@4.0.1/dist/aframe-physics-system.min.js"></script>
+    <meta name="description" content="Gorilla Tag-style VR movement">
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   </head>
   <body>
-    <a-scene physics="gravity: -9.8;" vr-mode-ui="enabled: true" embedded>
-
+    <a-scene xrweb no-permission>
       <!-- Ground -->
-      <a-box position="0 0 -5" width="100" height="0.5" depth="100" color="#7BC8A4" static-body></a-box>
+      <a-plane position="0 0 -4" rotation="-90 0 0" width="20" height="20" color="#7BC8A4"></a-plane>
 
-      <!-- Walls -->
-      <a-box position="0 3 -10" width="10" height="6" depth="0.5" color="#AAA" static-body></a-box>
+      <!-- Wall -->
+      <a-box position="0 1 -10" depth="0.5" height="4" width="8" color="#8AC"></a-box>
 
-      <!-- Player Capsule -->
-      <a-entity id="player" position="0 1.5 0" movement>
-        <a-camera wasd-controls-enabled="false" look-controls="pointerLockEnabled: false"></a-camera>
+      <!-- Lighting -->
+      <a-entity light="type: ambient; color: #BBB"></a-entity>
+      <a-entity light="type: directional; color: #FFF; intensity: 0.5" position="1 3 1"></a-entity>
+
+      <!-- Camera rig with hands -->
+      <a-entity id="rig" position="0 1.6 0">
+        <a-entity camera look-controls wasd-controls></a-entity>
 
         <!-- Left Hand -->
-        <a-entity id="leftHand" hand-controls="left" dynamic-body="mass: 1; shape: sphere;" class="hand"></a-entity>
+        <a-entity id="leftHand" hand-controls="hand: left" physics-hand></a-entity>
 
         <!-- Right Hand -->
-        <a-entity id="rightHand" hand-controls="right" dynamic-body="mass: 1; shape: sphere;" class="hand"></a-entity>
+        <a-entity id="rightHand" hand-controls="hand: right" physics-hand></a-entity>
       </a-entity>
-
-      <a-sky color="#ECECEC"></a-sky>
     </a-scene>
 
     <script>
-      AFRAME.registerComponent('movement', {
-        init: function () {
-          this.prevLeftPos = new THREE.Vector3();
-          this.prevRightPos = new THREE.Vector3();
-        },
+      AFRAME.registerComponent("physics-hand", {
         tick: function () {
-          const left = document.querySelector("#leftHand");
-          const right = document.querySelector("#rightHand");
-          const player = document.querySelector("#player").body;
+          const rig = document.querySelector("#rig");
+          const hand = this.el;
 
-          if (!left.object3D || !right.object3D) return;
+          // Track controller position and velocity
+          const prevPos = hand.getAttribute("prevPos") || hand.object3D.position.clone();
+          const currPos = hand.object3D.position;
+          const velocity = new THREE.Vector3().subVectors(prevPos, currPos);
 
-          const leftPos = left.object3D.getWorldPosition(new THREE.Vector3());
-          const rightPos = right.object3D.getWorldPosition(new THREE.Vector3());
+          // If colliding with the ground or wall, apply opposite movement to rig
+          const intersections = hand.components["hand-controls"].intersectedEls || [];
+          if (intersections.length > 0) {
+            rig.object3D.position.add(velocity.multiplyScalar(2)); // Move rig opposite to hand
+          }
 
-          const leftVel = new THREE.Vector3().subVectors(leftPos, this.prevLeftPos).multiplyScalar(60);
-          const rightVel = new THREE.Vector3().subVectors(rightPos, this.prevRightPos).multiplyScalar(60);
-
-          const hands = [left, right];
-          const vels = [leftVel, rightVel];
-
-          hands.forEach((hand, i) => {
-            // Check if hand is touching a static object (e.g., wall or ground)
-            const collisions = hand.body?.collisions || [];
-            collisions.forEach(other => {
-              if (other.mass === 0) {
-                // Push the player in the opposite direction of hand velocity
-                player.applyImpulse(vels[i].negate(), player.position);
-              }
-            });
-          });
-
-          this.prevLeftPos.copy(leftPos);
-          this.prevRightPos.copy(rightPos);
+          hand.setAttribute("prevPos", currPos.clone());
         }
       });
     </script>
