@@ -34,25 +34,27 @@
       <a-entity light="type: directional; color: #FFF; intensity: 0.5" position="1 3 1"></a-entity>
 
       <!-- Camera Rig with Dynamic Body -->
-      <a-entity id="rig" position="0 2 0" dynamic-body>
-        <a-entity camera look-controls wasd-controls position="0 1.6 0"></a-entity>
+      <a-entity id="rig"
+          position="0 3 0"
+          dynamic-body="mass: 1; shape: sphere; sphereRadius: 0.5">
+  <a-entity camera look-controls position="0 1.6 0"></a-entity>
 
-        <!-- Left Hand -->
-        <a-entity id="leftHand" 
-          hand-controls="hand: left" 
-          physics-hand 
-          sphere-collider="objects: [static-body]" 
-          static-body>
-        </a-entity>
+  <!-- Left Hand -->
+  <a-entity id="leftHand"
+            hand-controls="hand: left"
+            physics-hand
+            sphere-collider="objects: [static-body]"
+            static-body>
+  </a-entity>
 
-        <!-- Right Hand -->
-        <a-entity id="rightHand" 
-          hand-controls="hand: right" 
-          physics-hand 
-          sphere-collider="objects: [static-body]" 
-          static-body>
-        </a-entity>
-      </a-entity>
+  <!-- Right Hand -->
+  <a-entity id="rightHand"
+            hand-controls="hand: right"
+            physics-hand
+            sphere-collider="objects: [static-body]"
+            static-body>
+  </a-entity>
+</a-entity>
     </a-scene>
 
     <script>
