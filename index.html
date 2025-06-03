@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Gorilla Tag WebXR Demo</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-physics-system@4.0.1/dist/aframe-physics-system.min.js"></script>
+  </head>
+  <body>
+    <a-scene physics="gravity: -9.8;" vr-mode-ui="enabled: true" embedded>
+
+      <!-- Ground -->
+      <a-box position="0 0 -5" width="100" height="0.5" depth="100" color="#7BC8A4" static-body></a-box>
+
+      <!-- Walls -->
+      <a-box position="0 3 -10" width="10" height="6" depth="0.5" color="#AAA" static-body></a-box>
+
+      <!-- Player Capsule -->
+      <a-entity id="player" position="0 1.5 0" movement>
+        <a-camera wasd-controls-enabled="false" look-controls="pointerLockEnabled: false"></a-camera>
+
+        <!-- Left Hand -->
+        <a-entity id="leftHand" hand-controls="left" dynamic-body="mass: 1; shape: sphere;" class="hand"></a-entity>
+
+        <!-- Right Hand -->
+        <a-entity id="rightHand" hand-controls="right" dynamic-body="mass: 1; shape: sphere;" class="hand"></a-entity>
+      </a-entity>
+
+      <a-sky color="#ECECEC"></a-sky>
+    </a-scene>
+
+    <script>
+      AFRAME.registerComponent('movement', {
+        init: function () {
+          this.prevLeftPos = new THREE.Vector3();
+          this.prevRightPos = new THREE.Vector3();
+        },
+        tick: function () {
+          const left = document.querySelector("#leftHand");
+          const right = document.querySelector("#rightHand");
+          const player = document.querySelector("#player").body;
+
+          if (!left.object3D || !right.object3D) return;
+
+          const leftPos = left.object3D.getWorldPosition(new THREE.Vector3());
+          const rightPos = right.object3D.getWorldPosition(new THREE.Vector3());
+
+          const leftVel = new THREE.Vector3().subVectors(leftPos, this.prevLeftPos).multiplyScalar(60);
+          const rightVel = new THREE.Vector3().subVectors(rightPos, this.prevRightPos).multiplyScalar(60);
+
+          const hands = [left, right];
+          const vels = [leftVel, rightVel];
+
+          hands.forEach((hand, i) => {
+            // Check if hand is touching a static object (e.g., wall or ground)
+            const collisions = hand.body?.collisions || [];
+            collisions.forEach(other => {
+              if (other.mass === 0) {
+                // Push the player in the opposite direction of hand velocity
+                player.applyImpulse(vels[i].negate(), player.position);
+              }
+            });
+          });
+
+          this.prevLeftPos.copy(leftPos);
+          this.prevRightPos.copy(rightPos);
+        }
+      });
+    </script>
+  </body>
+</html>
